@@ -46,27 +46,27 @@ println("Part 1: $(part1)")
 
 # Part 2
 function getmapping(xs, src, dst)
-    low = 1 + max(0, xs.start - src.start)
-    high = length(src) - max(0, src.stop - xs.stop)
+    low = 1 + max(0, first(xs) - first(src))
+    high = length(src) - max(0, last(src) - last(xs))
     return src[low:high], dst[low:high]
 end
 
 function getunmatched(xs::UnitRange{Int64}, matched::Vector{UnitRange{Int64}})
     # Sort matched by start index
-    sort!(matched, by=x -> x.start)
+    sort!(matched, by=x -> first(x))
 
     unmatched = UnitRange[]
 
-    startx = xs.start
+    startx = first(xs)
     for m in matched
-        r = startx:(m.start - 1)
+        r = startx:(first(m) - 1)
         if !isempty(r)
             push!(unmatched, r)
         end
-        startx = m.stop + 1
+        startx = last(m) + 1
     end
 
-    r = startx:xs.stop
+    r = startx:last(xs)
     if !isempty(r)
         push!(unmatched, r)
     end
