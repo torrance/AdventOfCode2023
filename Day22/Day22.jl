@@ -9,8 +9,6 @@ bricks = map(enumerate(readlines("input.txt"))) do (i, line)
     return i, end1, end2
 end
 
-sort!(bricks, by=b -> min(b[2][3], b[3][3]))
-
 # It's ugly but fast, and non-allocating
 function isoverlapping(brick1::Tuple{XYZ, XYZ}, brick2::Tuple{XYZ, XYZ})
     for x1 in min(brick1[1][1], brick1[2][1]):max(brick1[1][1], brick1[2][1])
@@ -32,62 +30,54 @@ function isoverlapping(brick1::Tuple{XYZ, XYZ}, brick2::Tuple{XYZ, XYZ})
     return false
 end
 
-function settle(bricks)
-    moved::Bool = false
+function settle(bricks::Vector{Tuple{Int, XYZ, XYZ}})
+    settled = Vector{Tuple{Int, XYZ, XYZ}}()
 
-    for (i, (id, end1, end2)) in enumerate(bricks)
-        z =  min(end1[3], end2[3])
-        z <= 1 && continue
-
-        # Test for empty space below
-        end1 = end1 - SVector(0, 0, 1)
-        end2 = end2 - SVector(0, 0, 1)
-        z -= 1
-
-        for (j, (_, other1, other2)) in enumerate(bricks)
-            if i == j
-                continue
+    bricks = sort(bricks, by=b -> min(b[2][3], b[3][3]))
+    for (id, end1, end2) in bricks
+        while true
+            z =  min(end1[3], end2[3])
+            if z == 1
+                @goto settled
             end
 
-            if max(other1[3], other2[3]) != z
-                continue
+            # Test for empty space below
+            z -= 1
+
+            for (_, other1, other2) in settled
+                if max(other1[3], other2[3]) != z
+                    continue
+                end
+
+                if isoverlapping(
+                    (end1 - SVector(0, 0, 1), end2 - SVector(0, 0, 1)), (other1, other2)
+                )
+                    @goto settled
+                end
             end
 
-            if isoverlapping((end1, end2), (other1, other2))
-                @goto nogo
-            end
+            # If we're here: we can shift down
+            end1 = end1 - SVector(0, 0, 1)
+            end2 = end2 - SVector(0, 0, 1)
         end
 
-        # If we're here: we can shift down
-        bricks[i] = (id, end1, end2)
-        moved = true
-
-        @label nogo
+        @label settled
+        push!(settled, (id, end1, end2))
     end
 
-    return moved
+    return settled
 end
 
-# Do the settling, until there is no more settling to do
-@time while(settle(bricks)) end
+# Do the initial settling
+bricks = settle(bricks)
 
-@time part1 = count(eachindex(bricks)) do i
-    brick = bricks[i]
-    futurebricks = copy(bricks)
-    deleteat!(futurebricks, i)
+part1, part2 = sum(eachindex(bricks)) do i
+    brickscopy = copy(bricks)
+    deleteat!(brickscopy, i)
 
-    return !settle(futurebricks)
+    unmoved = length(intersect(brickscopy, settle(brickscopy)))
+    return [unmoved == length(brickscopy), length(brickscopy) - unmoved]
 end
+
 println("Part 1: ", part1)
-
-@time part2 = sum(eachindex(bricks)) do i
-    brick = bricks[i]
-    futurebricks = copy(bricks)
-    deleteat!(futurebricks, i)
-
-    while settle(futurebricks) end
-
-    unmoved = length(intersect(bricks, futurebricks))
-    return length(bricks) - unmoved - 1
-end
 println("Part 2: ", part2)
