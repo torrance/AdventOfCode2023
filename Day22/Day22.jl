@@ -36,16 +36,20 @@ function settle(bricks)
     moved::Bool = false
 
     for (i, (id, end1, end2)) in enumerate(bricks)
+        z =  min(end1[3], end2[3])
+        z <= 1 && continue
+
         # Test for empty space below
         end1 = end1 - SVector(0, 0, 1)
         end2 = end2 - SVector(0, 0, 1)
-
-        if min(end1[3], end2[3]) <= 1
-            continue
-        end
+        z -= 1
 
         for (j, (_, other1, other2)) in enumerate(bricks)
             if i == j
+                continue
+            end
+
+            if max(other1[3], other2[3]) != z
                 continue
             end
 
@@ -65,9 +69,9 @@ function settle(bricks)
 end
 
 # Do the settling, until there is no more settling to do
-while(settle(bricks)) end
+@time while(settle(bricks)) end
 
-part1 = count(eachindex(bricks)) do i
+@time part1 = count(eachindex(bricks)) do i
     brick = bricks[i]
     futurebricks = copy(bricks)
     deleteat!(futurebricks, i)
@@ -76,7 +80,7 @@ part1 = count(eachindex(bricks)) do i
 end
 println("Part 1: ", part1)
 
-part2 = sum(eachindex(bricks)) do i
+@time part2 = sum(eachindex(bricks)) do i
     brick = bricks[i]
     futurebricks = copy(bricks)
     deleteat!(futurebricks, i)
