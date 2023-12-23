@@ -1,4 +1,5 @@
 using StaticArrays
+using ThreadsX
 
 const XYZ = SVector{3, Int}
 
@@ -71,7 +72,7 @@ end
 # Do the initial settling
 bricks = settle(bricks)
 
-part1, part2 = sum(eachindex(bricks)) do i
+part1, part2 = ThreadsX.sum(eachindex(bricks)) do i
     brickscopy = copy(bricks)
     deleteat!(brickscopy, i)
 
